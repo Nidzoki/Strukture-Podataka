@@ -7,6 +7,9 @@ studenata (ime, prezime, bodovi) i učitati iz datoteke sve zapise. Na ekran isp
 prezime, apsolutni i relativni broj bodova.
 Napomena: Svaki redak datoteke sadrži ime i prezime studenta, te broj bodova na kolokviju.
 relatvan_br_bodova = br_bodova/max_br_bodova*100
+
+NAPOMENA: Potrebno je skinuti i datoteku studenti.txt čiji naziv morate sami upisati kada vas to program zatraži. Datoteka se treba nalaziti u istom direktoriju kao i program.
+
 */
 
 // Biblioteke i konstante
