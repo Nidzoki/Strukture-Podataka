@@ -26,22 +26,31 @@ Position FindSurname(Position first, char* surname);
 Position FindBefore(Position, Position);
 int DeleteAfter(Position head, char* surname);
 
-int swap(Position one, Position two);
+int swap(Position head, Position one, Position two);
 int CountList(Position head);
 int SortList(Position head);
 
  
 int main(int argc, char** argv) {
 	
-	Person Head = {"","", 0, NULL};
+	Person p = {"","", 0, NULL};
+    Position head = &p;
 
+    printf("a");
 
+    AppendList(head, "Jure", "Juric", 1990);            printf("a");
+    AppendList(head, "Ante", "Anic", 1990);             printf("a");
+    AppendList(head, "Jakov", "Cosic", 1990);           printf("a");
+    AppendList(head, "Mate", "Horvat", 1990);           printf("a");
+    AppendList(head, "Matea", "Kraljevic", 1990);       printf("a");
+    AppendList(head, "Stipe", "Lovric", 1990);          printf("a");
+    AppendList(head, "Ilija", "Manderalo", 1990);       printf("a");
 
+    SortList(head);                                     printf("a");
 
+    PrintList(head->next);                              printf("a");
 
-
-
-	return EXIT_SUCCESS;
+	return 0;
 }
  
 int PrependList(Position head, char* name, char* surname, int birthYear) {
@@ -69,7 +78,10 @@ int AppendList(Position head, char* name, char* surname, int birthYear)
 	}
  
 	last = FindLast(head);
-	InsertAfter(last, newPerson);
+
+    newPerson->next = last->next;
+	last->next = newPerson;
+ 
  
 	return EXIT_SUCCESS;
 }
@@ -116,9 +128,7 @@ Position FindLast(Position head)
 {
 	Position temp = head;
  
-	while (temp->next) {
- 
-	}
+	while (temp->next != NULL) {continue;}
  
 	return temp;
 }
@@ -161,7 +171,7 @@ int CountList(Position head){
 
 
     while(head->next){
-        i++;
+        counter++;
         head = head->next;
     }
 
@@ -185,21 +195,30 @@ int swap(Position head, Position one, Position two){
 
 
 int SortList(Position head){
-    int n = 0, i = 0, j = 0;
     Position pok_i = NULL, pok_j = NULL;
     
-    n = CountList(head);
+
     pok_i = head;
     pok_j = head;
 
+    do{
 
-    for (i = 0; i < n-1; i++){
         pok_i = pok_i->next;
-        pok_j = pok_i;
-        for (j = 0; j < n-i-1; j++)
-            if (pok_i->] > arr[j+1]){
+        pok_j = pok_i->next;
+
+        do{
+
+            if (strcmp(pok_i->surname, pok_j->surname) < 0){
+
                 swap(head, pok_i, pok_j);
             }
-            pok_j = pok_j->next;
-        }
-    }
+
+            pok_j = pok_j->next; 
+
+        }while(pok_j->next);
+
+    }while(pok_i->next);
+
+return EXIT_SUCCESS;
+
+}
