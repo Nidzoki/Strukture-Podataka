@@ -37,7 +37,7 @@ int citanje_iz_datoteke(Pozicija head){
     FILE * datoteka = NULL;
     datoteka = fopen("polinomi.txt", "r");
 
-    if(datoteka){
+    if(!datoteka){
 
         printf("Neuspjesno otvaranje datoteke!");
         
