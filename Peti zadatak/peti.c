@@ -1,119 +1,256 @@
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
 
-struct _stog;
+#define MAX_LINE 1024
 
-typedef struct _stog * Pozicija;
+struct _znak;
+typedef struct _znak * pozicija;
 
-typedef struct _stog{
-    int broj;
-    Pozicija next;
-}stog;
+typedef struct _znak {
 
+    double br;
 
-int citaj_datoteku(Pozicija head);
+    pozicija next;
+}znak;
 
-int stavi_na_pocetak(Pozicija head, int broj);
+pozicija stvori_element(double br);
 
-int skini_sa_pocetka(Pozicija head);
-
-Pozicija stvori_element(int broj);
+int dodaj_iza(pozicija pos, pozicija novi);
+int stavi_na_stog(pozicija head, double br);
+int izbrisi_iza(pozicija pos);
+int skini_sa_stoga(double* rez_final, pozicija head);
+int izracunaj(pozicija head, char operator);
+int ucitaj_iz_datoteke(double* rez_final, char* ime_datoteke);
+int brisi_sve(pozicija head);
 
 
 int main(){
 
-    stog s = {.broj = 0, .next = NULL};
+    char ime_datoteke[MAX_LINE] = {0};
+    double rezultat;
 
-    Pozicija head = &s;
+    printf("Unesite ime_datoteke:\n ");
+    scanf(" %s", ime_datoteke);
+    
+    ucitaj_iz_datoteke(&rezultat, ime_datoteke);
+    printf("Rezultat = %f \n", rezultat);
 
-    citaj_datoteku(head);
+	return 0;
+}
 
-    if(head->next->next != NULL){
-        printf("Postfix neispravan");
-        return -1;
+
+pozicija stvori_element(double br){
+
+    pozicija novi = NULL;
+
+    novi = (pozicija)malloc(sizeof(znak));
+    if(novi == NULL){
+        printf("Nemoguce alocirati memoriju!\n");
+        return NULL;
     }
 
-    printf("Rezultat je %d.", head->next->broj);
+    novi->br=br;
+    novi->next=NULL;
+
+    return novi;
+}
+
+
+int dodaj_iza(pozicija pos, pozicija novi){
+
+    novi->next = pos->next;
+    pos->next = novi;
 
     return 0;
 }
 
 
-int citaj_datoteku(Pozicija head){
-    
-    FILE * datoteka = NULL;
-    char temp;
-    datoteka = fopen("datoteka.txt", "r");
-    
-    if(!datoteka){
+int stavi_na_stog(pozicija head, double br){
 
-        printf("\nPogreska pri otvaranju datoteke! \n");
+    pozicija novi = NULL;
+
+    novi = stvori_element(br);
+
+    if(novi == NULL){
+
+        return -1;
+    }
+    dodaj_iza(head, novi);
+
+    return 0;
+}
+ 
+int izbrisi_iza(pozicija pos){
+
+    pozicija element = pos->next;
+
+    if(element == NULL){
+        return 0;
+    }
+    pos->next = element->next;
+
+    free(element);
+
+    return 0;
+}
+
+
+int skini_sa_stoga(double * rez_final, pozicija head){
+
+    pozicija prvi = head->next;
+
+    if(prvi == NULL){
+
+        printf("Postfiks nije valjan!");
         return -1;
     }
 
-    while(!feof){
-        int i = -1;
-        int br = 0;
-        do{ temp = fgetc(datoteka);
-            if(temp == '+'){
-                int a, b;
-                a = skini_sa_pocetka(head);
-                b = skini_sa_pocetka(head);
+    *rez_final = prvi->br;
 
-                stavi_na_pocetak(head, a + b);
-            }
-            else if(temp == '-'){
-                int a, b;
-                a = skini_sa_pocetka(head);
-                b = skini_sa_pocetka(head);
+    izbrisi_iza(head);
 
-                stavi_na_pocetak(head, a - b);
-            }
-            else if(temp == '*'){
-                int a, b;
-                a = skini_sa_pocetka(head);
-                b = skini_sa_pocetka(head);
+    return 0;
+}
 
-                stavi_na_pocetak(head, a * b);
-            }
-            else if(temp == '/'){
-                int a, b;
-                a = skini_sa_pocetka(head);
-                b = skini_sa_pocetka(head);
+int izracunaj(pozicija head, char operator){
 
-                if(b == 0){
-                    printf("Postfix neispravan! Nemoguće dijeliti nulom!");
-                    return -1;
-                }
+    double operand1 = 0;
+    double operand2 = 0;
+    double rezultat = 0;
 
-                stavi_na_pocetak(head, a - b);
-                
-            }
-            i++;
-            
-            if(temp >= '0' && temp <= '9'){
-                br += ((int)temp - 48) * pow(10, i);
-            }
+    skini_sa_stoga(&operand2, head);
 
-            else{printf("Postfix neispravan!");
-                return -1;
-            }
+    skini_sa_stoga(&operand1, head);
 
+
+    switch (operator)
+    {
+    case '+':
+
+        rezultat = operand1 + operand2;         break;
+    case '-':
+        rezultat = operand1 - operand2;         break;
+    case '*':
+        rezultat = operand1 * operand2;         break;
+    case '/':
+        if(operand2 == 0){
+            perror("Nemoguce dijeliti nulom!\n");
+            return -1;
         }
-        while(temp != ' ');
-        
-        if(i != 0){
-            stavi_na_pocetak(head, br);
-        }
+    rezultat = operand1 / operand2;             break;
+    
+    default:                                    break;
+
+    return stavi_na_stog(head, rezultat);
     }
 }
 
-int skini_sa_pocetka(Pozicija head){
-    int a;
-    Pozicija element = head->next;
-    head->next = element->next;
-    a = element->broj;
-    free(element);
-    return a;
+
+
+int ucitaj_iz_datoteke(double* rez_final, char* ime_datoteke){
+
+   FILE * datoteka = NULL;
+   int duljina = 0;
+   int broj_bajtova = 0;
+
+   char * string = NULL;
+   char * str = NULL;
+   char operacija = 0;
+
+   double br = 0;
+   
+   znak head = {.next = NULL, .br =0};
+
+    datoteka = fopen(ime_datoteke, "rb");
+    if(datoteka == NULL){
+        printf("Nemoguce otvoriti datoteku!\n");
+        return -1;
+    }
+
+    fseek(datoteka, 0, SEEK_END); 
+
+    duljina = ftell(datoteka);
+
+    string = (char *)calloc(duljina +1, sizeof(char));
+
+    if(string == NULL){
+
+        printf("Nemoguce alocirati memoriju!");
+        return -1;
+    }
+
+    rewind(datoteka);
+
+    fread(string, sizeof(char), duljina, datoteka);
+
+    printf(" %s\n", string);
+
+    fclose(datoteka);
+
+    str = string;
+
+    while(strlen(str)>0){
+
+        ;
+
+        if(sscanf(str, " %lf %n", &br, &broj_bajtova)){
+
+            ;
+            if(stavi_na_stog(&head, br) != 0){
+
+                free(string);
+
+                brisi_sve(&head);
+
+                return -1;
+            }
+            str = str + broj_bajtova;
+        }
+
+        else {
+            sscanf(str, " %c %n", &operacija, &broj_bajtova);
+            
+            if(izracunaj(&head, operacija) != 0){
+
+                free(string);
+
+                brisi_sve(&head);
+
+                return -1;
+            }
+            str = str + broj_bajtova;
+        }
+
+    }
+
+    free(string);
+
+    ;
+
+    if(skini_sa_stoga(rez_final, &head) != 0)
+    {
+        brisi_sve(&head);
+
+        return -1;
+    }
+
+    if(head.next){
+        printf("Postfiks nije valjan!");
+
+        brisi_sve(&head);
+
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int brisi_sve(pozicija head){
+    
+    while(head->next != NULL){
+
+        izbrisi_iza(head);
+    }
 }
