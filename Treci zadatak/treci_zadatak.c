@@ -1,224 +1,342 @@
-/*
-Dodati funkciju za sortiranje liste.
-*/
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#define MAX_SIZE 50
- 
-struct _Person;
-typedef struct _Person* Position;
-typedef struct _Person {
-	char name[MAX_SIZE];
-	char surname[MAX_SIZE];
-	int birthYear;
-	Position next;
-}Person;
- 
-int PrependList(Position head, char* name, char* surname, int birthYear);
-int AppendList(Position head, char* name, char* surname, int birthYear);
-int PrintList(Position first);
-Position CreatePerson(char* name, char* surname, int birthYear);
-int InsertAfter(Position position, Position newPerson);
-Position FindLast(Position head);
-Position FindSurname(Position first, char* surname);
-Position FindBefore(Position, Position);
-int DeleteAfter(Position head, char* surname);
+#include <stdlib.h>
+#include <malloc.h>
 
-int swap(Position head, Position one, Position two);
-int CountList(Position head);
-int SortList(Position head);
+#define MAX_IME 30
 
- 
-int main(int argc, char** argv) {
+
+struct _osoba;
+typedef struct _osoba * pozicija;
+typedef struct _osoba{
+
+	char ime[MAX_IME];
+	char prezime[MAX_IME];
+
+	int godiste;
+
+	pozicija next;
+
+}osoba;
+
+int dodaj_na_pocetak(pozicija head, char * ime, char * prezime, int godiste);
+int dodaj_na_kraj(pozicija head, char * ime, char * prezime, int godiste);
+int dodaj_iza(pozicija ref, pozicija osoba);
+int umetni_iza(pozicija head, char * ime, char * prezime, int godiste, char * sljedeci_p);
+int umetni_ispred(pozicija head, char * ime, char * prezime, int godiste, char * prethodni);
+int dodaj_ispred(pozicija head, pozicija ref, pozicija osoba);
+int izbrisi_iza(pozicija head, char * prezime);
+int ispisi(pozicija head);
+int ucitaj_txt(pozicija head, char * datoteka);
+int ispisi_txt(pozicija head, char * dat);
+int sortirano(pozicija head, pozicija osoba);
+int izbornik(pozicija head);
+
+pozicija stvori_osobu(char * ime, char * prezime, int godiste);
+pozicija pronadi_zadnjeg(pozicija head);
+pozicija pronadi_ispred(pozicija head, char * prezime);
+pozicija pretrazi_prezime(pozicija head, char * prezime);
+
+int main(){
+
+	osoba head = {.ime ={0}, .prezime ={0}, .godiste = 0, .next = NULL};
+
+	while(!izbornik(&head)){};
+
+	return 0;}
+
+pozicija stvori_osobu(char * ime, char * prezime, int godiste){
+	pozicija novi = (pozicija)malloc(sizeof(osoba));
 	
-	Person p = {"","", 0, NULL};
-    Position head = &p;
+	if(novi == NULL){
+		printf("Pogreska pri alociranju memorije!");
+		return NULL;
+	}
 
-    printf("a");
+	strcpy(novi->ime,ime);
+	strcpy(novi->prezime,prezime);
+	novi->godiste = godiste;
+	novi->next = NULL;
 
-    AppendList(head, "Jure", "Juric", 1990);            printf("a");
-    AppendList(head, "Ante", "Anic", 1990);             printf("a");
-    AppendList(head, "Jakov", "Cosic", 1990);           printf("a");
-    AppendList(head, "Mate", "Horvat", 1990);           printf("a");
-    AppendList(head, "Matea", "Kraljevic", 1990);       printf("a");
-    AppendList(head, "Stipe", "Lovric", 1990);          printf("a");
-    AppendList(head, "Ilija", "Manderalo", 1990);       printf("a");
+	return novi;
 
-    SortList(head);                                     printf("a");
+}
 
-    PrintList(head->next);                              printf("a");
+int dodaj_iza(pozicija ref, pozicija osoba){
+	osoba->next = ref->next;
+	ref->next = osoba->next;
 
 	return 0;
 }
- 
-int PrependList(Position head, char* name, char* surname, int birthYear) {
- 
-	Position newPerson = NULL;
- 
-	newPerson = CreatePerson(name, surname, birthYear);
-	if (!newPerson) {
+int dodaj_ispred(pozicija head, pozicija ref, pozicija osoba){
+	pozicija novi = NULL, sljedeci = NULL;
+
+	novi = stvori_osobu(osoba->ime, osoba->prezime, osoba->godiste);
+
+	if(novi == NULL)
+		return -1;
+	
+	sljedeci = pronadi_ispred(head, ref->prezime);
+
+	dodaj_iza(sljedeci, novi);
+
+}
+
+int dodaj_na_pocetak(pozicija head, char * ime, char * prezime, int godiste){
+
+	pozicija novi = NULL;
+	novi = stvori_osobu(ime, prezime, godiste);
+
+	if(novi == NULL)
+		return -1;
+
+		dodaj_iza(head, novi);
+		
+}
+
+pozicija pronadi_zadnjeg(pozicija head){
+	while(head->next != NULL){
+		head = head->next;
+	}
+
+	return head;
+}
+
+int dodaj_na_kraj(pozicija head, char * ime, char * prezime, int godiste){
+	
+	pozicija zadnji = NULL, novi = NULL;
+	
+	zadnji = pronadi_zadnjeg(head);
+	novi = stvori_osobu(ime, prezime, godiste);
+
+	if(novi == NULL)
+		return -1;
+	
+	dodaj_iza(zadnji, novi);
+
+	return 0;
+
+}
+
+pozicija pronadi_ispred(pozicija head, char * prezime){
+
+	pozicija osoba = NULL;
+	osoba = pretrazi_prezime(head, prezime);
+
+	if(osoba == NULL){
+		printf("Osoba ne postoji!");
+		return 0;
+	}
+
+	while(head->next != NULL && head->next != osoba){
+		head = head->next;
+	}
+
+	if(head->next == osoba)
+		return head;
+	
+	else
+	return NULL;
+
+}
+
+
+pozicija pretrazi_prezime(pozicija head, char * prezime){
+
+	head = head->next;
+
+	while(head != NULL){
+		if(strcmp(head->prezime, prezime) == 0){
+			return head;
+		}
+		head = head->next;
+	}
+
+	return NULL;
+
+}
+
+
+int izbrisi_iza(pozicija head, char * prezime){
+
+	pozicija prije = NULL, osoba = NULL;
+
+	prije = pronadi_ispred(head, prezime);
+
+	osoba = prije->next;
+
+	prije->next = osoba ->next;
+
+	free(osoba);
+
+	return 0;
+}
+
+int ispisi(pozicija head){
+	head = head->next;
+	while(head != NULL){
+		printf(" \nIme: %s\n Prezime: %s\n Godiste: %d\n" , head->ime, head->prezime, head->godiste);
+		head = head->next;
+	}
+
+	return 0;
+}
+
+
+int ucitaj_txt(pozicija head, char * datoteka){
+	FILE * dat = NULL;
+	char str[MAX_IME] = {0};
+	char * ime, * prezime;
+	int godiste;
+	pozicija osoba = NULL;
+
+	dat = fopen(datoteka, "r");
+	if(dat == NULL){
+		printf("Nemoguce otvoriti datoteku!");
 		return -1;
 	}
- 
-	InsertAfter(head, newPerson);
- 
-	return EXIT_SUCCESS;
+
+	while(!feof(dat)){
+		osoba = (pozicija)malloc(sizeof(osoba));
+		fgets(str, MAX_IME, dat);
+		if(sscanf(str, "%s %s %d", osoba->ime, osoba->prezime, osoba->godiste) == 3){
+			sortirano(head, osoba);
+		}
+	}
+	fclose(dat);
+
+	return 0;
 }
- 
-int AppendList(Position head, char* name, char* surname, int birthYear)
-{
-	Position newPerson = NULL;
-	Position last = NULL;
- 
-	newPerson = CreatePerson(name, surname, birthYear);
-	if (!newPerson) {
+
+
+int sortirano(pozicija head, pozicija osoba){
+	
+	while(head != NULL && strcmp(head->prezime, osoba->prezime) < 0){
+		head = head->next;
+	}
+
+	dodaj_iza(head, osoba);
+
+	return 0;
+
+}
+
+int ispisi_txt(pozicija head, char * datoteka){
+	FILE * dat = NULL;
+	dat = fopen(datoteka, "w");
+
+	if(dat != NULL){
+		printf("Nemoguce otvoriti datoteku!");
+
 		return -1;
 	}
- 
-	last = FindLast(head);
 
-    newPerson->next = last->next;
-	last->next = newPerson;
- 
- 
-	return EXIT_SUCCESS;
-}
- 
-int PrintList(Position first)
-{
-	Position temp = first;
- 
-	while (temp) {
-		printf("Name: %s, surname: %s, birthyear: %d\n", temp->name, temp->surname, temp->birthYear);
-		temp = temp->next;
+	while(head != NULL){
+		fprintf(dat, "%s %s %d\n", head->ime, head->prezime, head->godiste);
+		head = head->next;
 	}
- 
-	return EXIT_SUCCESS;
+
+	fclose(dat);
+	return 0;
 }
- 
-Position CreatePerson(char* name, char* surname, int birthYear)
-{
-	Position newPerson = NULL;
- 
-	newPerson = (Position)malloc(sizeof(Person));
-	if (!newPerson) {
-		perror("Can't allocate memory!\n");
-		return NULL;
+
+int umetni_iza(pozicija head, char * ime, char * prezime, int godiste, char * sljedeci_p){
+
+	pozicija sljedeci = NULL, novi = NULL;
+
+	novi = stvori_osobu(ime, prezime, godiste);
+
+	if(novi == NULL)return -1;
+
+	sljedeci = pretrazi_prezime(head, sljedeci_p);
+
+	dodaj_iza(sljedeci, novi);
+
+	return 0;
+
+}
+
+int umetni_ispred(pozicija head, char * ime, char * prezime, int godiste, char * prethodni){
+	pozicija prosli = NULL, novi = NULL;
+
+	novi = stvori_osobu(ime, prezime, godiste);
+
+	if(novi == NULL)return -1;
+
+	prosli = pretrazi_prezime(head, prethodni);
+
+	dodaj_iza(prosli, novi);
+
+	return 0;
+}
+
+int izbornik(pozicija head){
+
+	int odabir = 0;
+
+	char ime[MAX_IME] = {0};
+	char prezime[MAX_IME] = {0};
+	int godiste = 0;
+	char ref[MAX_IME] ={0};
+	char dat[256];
+
+	pozicija osoba = NULL;
+
+	while(odabir > 10 || odabir < 1) {
+		printf( " 1.  Dodaj osobu na pocetak \n"
+				" 2.  Dodaj osobu na kraj \n"
+				" 3.  Izbrisi osobu \n"
+				" 4.  Ispisi listu \n"
+				" 5.  Ucitaj tekstualnu datoteku \n"
+				" 6.  Ispisi u tekstualnu datoteku \n"
+				" 7.  Sortirano unosenje \n"
+				" 8.  Dodaj iza studenta po prezimenu \n"
+				" 9.  Dodaj prije studenta po prezimenu \n"
+				" 10. Izlaz\n\n");
+
+		scanf(" %d", &odabir);
+
 	}
- 
-	strcpy(newPerson->name, name);
-	strcpy(newPerson->surname, surname);
-	newPerson->birthYear = birthYear;
-	newPerson->next = NULL;
- 
-	return newPerson;
-}
- 
-int InsertAfter(Position position, Position newPerson)
-{
-	newPerson->next = position->next;
-	position->next = newPerson;
- 
-	return EXIT_SUCCESS;
-}
- 
-Position FindLast(Position head)
-{
-	Position temp = head;
- 
-	while (temp->next != NULL) {continue;}
- 
-	return temp;
-}
- 
-Position FindSurname(Position first, char* surname)
-{
-	Position temp = first;
-	while (temp) {
-		if (strcmp(temp->surname, surname) == 0) {
-			return temp;
+
+	switch(odabir){
+		case 1: 	printf("\n Unesite podatke u formatu [ime] [prezime] [godiste]:\n");
+					scanf(" %s %s %d", ime, prezime, &godiste);
+					dodaj_na_pocetak(head, ime, prezime, godiste);
+					break;
+		case 2: 	printf("\n Unesite podatke u formatu [ime] [prezime] [godiste]");
+					scanf(" %s %s %d", ime, prezime, &godiste);
+					dodaj_na_kraj(head, ime, prezime, godiste);
+					break;				
+		case 3: 	printf("\nUnesite prezime osobe koju zelite obrisati:\n");
+					scanf(" %s", prezime);
+					izbrisi_iza(head, pronadi_ispred(head, prezime)->prezime);
+					break;
+		case 4:		 ispisi(head);
+					break;
+		case 5:		 printf("\n Unesite ime datoteke:\n");
+					scanf(" %s",dat);
+					ucitaj_txt(head, dat);
+					break;
+		case 6: 	printf("\n Unesite ime datoteke:\n");
+					scanf(" %s",dat);
+					ispisi_txt(head, dat);
+					break;
+		case 7: 	printf("Unesite podatke u formatu [ime] [prezime] [godiste]: \n");
+					scanf(" %s %s %d", ime, prezime, &godiste);
+					osoba = stvori_osobu(ime, prezime, godiste);
+					sortirano(head, osoba);
+					break;
+		case 8: printf("\n Unesite podatke u formatu [ime] [prezime] [godiste] [prezime referentne osobe]");
+					scanf(" %s %s %d %s", ime, prezime, &godiste, ref);
+					umetni_iza(head, ime, prezime, godiste, ref);
+					break;	
+		case 9: printf("\n Unesite podatke u formatu [ime] [prezime] [godiste] [prezime referentne osobe]");
+					scanf(" %s %s %d", ime, prezime, &godiste, ref);
+					umetni_ispred(head, ime, prezime, godiste, ref);
+					break;	
+		case 10: return -1;
+		
 		}
-	}
-}
-
-Position FindBefore(Position first, Position final)
-{
-	Position temp = first;
-	while (temp) {
-		if (temp->next == final) {
-			return temp;
-		}
-	}
-    return NULL;
-}
-
-int DeleteAfter(Position head, char* surname){
-    	Position temp = head;
-	while (temp) {
-		if (strcmp(temp->next->surname, surname) == 0) {
-			temp->next = temp->next->next;
-            free(temp);
-            return EXIT_SUCCESS;
-		}
-	}
-}
-
-int CountList(Position head){
-
-    int counter = 0;
-
-
-    while(head->next){
-        counter++;
-        head = head->next;
-    }
-
-return counter;
-}
-
-int swap(Position head, Position one, Position two){
-    Position temp1 = NULL, temp2 = NULL, temp3 = NULL, temp4 = NULL;
-
-    temp1 = one;
-    temp2 = two;
-    temp3 = one->next;
-    temp4 = two->next;
-
-    FindBefore(head, one)->next = temp2;
-    FindBefore(head, two)->next = temp1;
-    one->next = temp4;
-    two->next = temp3;
-
-}
-
-
-int SortList(Position head){
-    Position pok_i = NULL, pok_j = NULL;
-    
-
-    pok_i = head;
-    pok_j = head;
-
-    do{
-
-        pok_i = pok_i->next;
-        pok_j = pok_i->next;
-
-        do{
-
-            if (strcmp(pok_i->surname, pok_j->surname) < 0){
-
-                swap(head, pok_i, pok_j);
-            }
-
-            pok_j = pok_j->next; 
-
-        }while(pok_j->next);
-
-    }while(pok_i->next);
-
-return EXIT_SUCCESS;
+		return 0;
 
 }
