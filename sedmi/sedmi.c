@@ -1,201 +1,284 @@
-#include <stdio.h>
-#include <malloc.h>
-#include <string.h>
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
 
-#define max_dir_ime 255						// direktorij može imati ime od 255 znakova
+#define MAX_DIR_IME 255
+#define MAX 1024
 
-struct _direktorij;
+struct _Cvor;
 
-typedef struct _direktorij* pozicija;
+typedef struct _Cvor * pozicija_cvor;
 
-typedef struct _direktorij {
+typedef struct _Cvor{
 
-	char ime[max_dir_ime];	
+	char ime[MAX_DIR_IME];
 
-	pozicija next;
-	pozicija djeca;
-	pozicija nazad;
+	pozicija_cvor braca;
+	pozicija_cvor djeca;
 
-}direktorij;
+}Cvor;
 
+struct _Stog;
 
-pozicija alociranje_direktorija(char* ime_novog_direktorija, pozicija trenutni_direktorij);
+typedef struct _Stog * pozicija_stog;
 
+typedef struct _Stog{
 
-int sortirani_unos_u_listu(pozicija head, pozicija novi_direktorij); 
-int ispis_liste(pozicija head);
-int izbornik();
-int pozivatelj_funkcija(int opcija, pozicija trenutni);
+	pozicija_cvor direktorij;
+	pozicija_stog next;
 
-// 1- "md", 2 - "cd dir", 3 - "cd..", 4 - "dir" i 5 – izlaz
+}Stog;
 
-int mkdir(pozicija trenutni);
-int dir(pozicija trenutni);
-pozicija cd_tocka_tocka(pozicija trenutni);
-pozicija cd_dir(pozicija trenutni);
+pozicija_cvor mkdir(char* ime, pozicija_cvor trenutni);
+pozicija_cvor umetni_direktorij(pozicija_cvor trenutni, pozicija_cvor novi);
+pozicija_cvor cd(pozicija_stog head, pozicija_cvor trenutni, char* ime);
 
-int main() {
+pozicija_stog pronadi_zadnjeg(pozicija_stog head);
+pozicija_stog pronadi_predzadnjeg(pozicija_stog head);
 
-	direktorij C = { .djeca = NULL, .ime = "C", .next = NULL };		// deklaracija root direktorija
+int stavi_na_stog(pozicija_stog head, pozicija_cvor direktorij);
+int skini_sa_stoga(pozicija_stog head);
+int dir(pozicija_cvor trenutni);
+int Exit(pozicija_cvor trenutni);
+int path(pozicija_stog head);
+int izbornik(pozicija_cvor trenutni, pozicija_stog head);
 
-	pozicija trenutni = &C;											// pokazivač na trenutni direktorij (u početku na root direktorij)
+int main(){	
+	
+	Stog head;
 
-	pozivatelj_funkcija(izbornik(), trenutni);
+	Cvor root;
+	
+	strcpy(root.ime, "C:");
 
+	root.djeca = NULL;
+	root.braca = NULL;
+
+	head.direktorij = NULL;
+	head.next = NULL;
+
+	stavi_na_stog(&head, &root);
+	izbornik(&root, &head);
 
 	return 0;
 }
 
 
-pozicija alociranje_direktorija(char* ime_novog_direktorija, pozicija trenutni_direktorij) {	
+pozicija_cvor mkdir(char * ime, pozicija_cvor trenutni){
 
-	pozicija novi_direktorij = NULL;
+	pozicija_cvor novi = NULL;
+	novi = (pozicija_cvor)malloc(sizeof(Cvor));
 
-	novi_direktorij = malloc(sizeof(direktorij));
+	if (novi == NULL)
+	{
+		printf("Neuspjela alokacija memorije!\n");
 
-	if (!novi_direktorij) {
-		perror("\nNeuspjesna alokacija memorije za direktorij!\n");
 		return NULL;
 	}
 
-	novi_direktorij->djeca = NULL;						// nakon alokacije novi direktorij nema djece
-	novi_direktorij->next = NULL;
-	novi_direktorij->nazad = trenutni_direktorij;
+	strcpy(novi->ime, ime);
 
-	trenutni_direktorij->djeca->next = novi_direktorij;
+	novi->djeca = NULL;
 
-	strcpy(novi_direktorij->ime, ime_novog_direktorija);
+	novi->braca = NULL;
 
-	return novi_direktorij;
+	trenutni->djeca = umetni_direktorij(trenutni->djeca, novi); 
+
+	return trenutni;
 }
 
-int mkdir(pozicija trenutni) {
 
-	pozicija novi_direktorij = NULL;
+pozicija_cvor umetni_direktorij(pozicija_cvor trenutni, pozicija_cvor novi){
 
-	char ime_direktorija[max_dir_ime];
+	if (trenutni == NULL){
 
-	printf("\n Unesite ime direktorija: ");
+		return novi;
+	}
+	else if (strcmp(trenutni->ime, novi->ime) < 0){
 
-	scanf_s(" %s", ime_direktorija, max_dir_ime);
+		trenutni->braca = umetni_direktorij(trenutni->braca, novi);
+	}
+	else if (strcmp(trenutni->ime, novi->ime) > 0){
 
-	novi_direktorij = alociranje_direktorija(ime_direktorija, trenutni);
+		novi->braca = trenutni;
 
-	sortirani_unos_u_listu(trenutni->djeca, novi_direktorij);
+		return novi;
+	}
+	else{
+
+	printf("Direktorij vec postoji!\n");
+
+		free(novi);
+	}
+
+	return trenutni;
+}
+
+int stavi_na_stog(pozicija_stog head, pozicija_cvor direktorij){
+
+	pozicija_stog novi = NULL;
+
+	novi = (pozicija_stog)malloc(sizeof(Stog));
+
+	if (novi == NULL){
+
+		printf("Neuspjela alokacija memorije!\n");
+		return -1;
+	}
+
+	pozicija_stog zadnji = pronadi_zadnjeg(head);
+
+	novi->next = zadnji->next;
+	zadnji->next = novi;
+
+	novi->direktorij = direktorij;
 
 	return 0;
-
 }
 
+pozicija_stog pronadi_zadnjeg(pozicija_stog head){
 
-int sortirani_unos_u_listu(pozicija head, pozicija novi_direktorij) {
+	while (head->next != NULL){
 
-	while (head->next != NULL) {
+		head = head->next;
+	}
+	return head;
+}
 
-		if (strcmp(head->ime, novi_direktorij->ime)) {
-			novi_direktorij->next = head->next;
-			head->next = novi_direktorij;
-			return 0;
-		}
+pozicija_stog pronadi_predzadnjeg(pozicija_stog head){
+
+	while (head->next->next != NULL){
+
+		head = head->next;
+	}
+	return head;
+}
+
+int skini_sa_stoga(pozicija_stog head){
+
+	if (head->next == NULL){
+		return 0;
+	}
+
+	pozicija_stog prethodni = pronadi_predzadnjeg(head);
+	pozicija_stog element = NULL;
+
+	element = prethodni->next;
+	prethodni->next = element->next;
+
+	free(element);
+	
+	return 0; 
+}
+
+int path(pozicija_stog head){
+
+	head = head->next;
+
+	while (head != NULL){
+
+		printf("%s\\", head->direktorij->ime);
 
 		head = head->next;
 	}
 
-	head->next = novi_direktorij;
+	printf("> ");
 
 	return 0;
-
 }
 
+pozicija_cvor cd(pozicija_stog head, pozicija_cvor trenutni, char * ime){
 
-int ispis_liste(pozicija head) {				// ispisuje listu
+	if (NULL == trenutni->djeca){
 
-	head = head->next;
-	
-	while(head != NULL)
-		{
-		printf("\n\t- %s \n", head->ime);
-	} 
+		printf("Direktorij je prazan!\n");
 
-		return 0;
+		return trenutni;
+	}
 
-}
-
-int dir(pozicija trenutni) {									// ispisuje direktorije koje se nalaze u trenutnom direktoriju
-
-	printf("\n %s: \n", trenutni->ime);
-	ispis_liste(trenutni->djeca);
-	return 0;
-}
-
-
-int izbornik() {
-	int opcija = 0;
-					// 1- "md", 2 - "cd dir", 3 - "cd..", 4 - "dir" i 5 – izlaz
-	do{
-		printf("\n\n 1 - md/mkdir (stvaranje novog direktorija),\n 2 - cd dir (otvaranje određenog direktorija),\n)");
-		printf("3 - cd.. (povratak u prethodni direktorij),\n 4 - dir (ispis direktorija koji se nalaze u trenutnom direktoriju),\n");
-		printf("5 – izlaz \n \n Unesite opciju: ");
-
-		scanf_s(" %d", &opcija, 1);
+	while (trenutni->djeca != NULL && strcmp(trenutni->djeca->ime, ime)!=0){
 		
-		if (opcija < 1 || opcija > 5) {
+		trenutni->djeca = trenutni->djeca->braca;
+	}
 
-			printf("\n \n Opcija nije valjana! Pokusajte ponovo! \n\n");
+	if (trenutni->djeca == NULL){
 
-		}
-	} while (opcija < 1 || opcija > 5);
+		printf("Nepostojeci direktorij!\n");
 
-	return opcija;
+		return trenutni;
+	}
 
+	stavi_na_stog(head, trenutni->djeca);
+	
+	return trenutni->djeca;
 }
 
 
 
-pozicija cd_tocka_tocka(pozicija trenutni) {
+int dir(pozicija_cvor trenutni){
 
-	return trenutni->nazad;
+	if (trenutni->djeca == NULL){
+	
+		printf("Direktorij je prazan!\n");
+	}
 
-}
+	while (trenutni->djeca != NULL){
 
+		printf("<DIR>\t\t %s\n", trenutni->djeca->ime);
 
-int pozivatelj_funkcija(int opcija, pozicija trenutni) {		// 1- "md", 2 - "cd dir", 3 - "cd..", 4 - "dir" i 5 – izlaz
-
-	switch (opcija) {
-	case 1:		mkdir(trenutni);					pozivatelj_funkcija(izbornik(), trenutni);	break;
-	case 2:		cd_dir(trenutni);					pozivatelj_funkcija(izbornik(), trenutni);	break;
-	case 3:		cd_tocka_tocka(trenutni);			pozivatelj_funkcija(izbornik(), trenutni);	break;
-	case 4:		dir(trenutni);						pozivatelj_funkcija(izbornik(), trenutni);	break;
-	case 5:		printf("\n\n Program ugasen!\n\n");												break;
-	default:	break;
+		trenutni->djeca = trenutni->djeca->braca;
 	}
 
 	return 0;
 }
 
 
-pozicija cd_dir(pozicija trenutni) {
 
-	pozicija djeca_head = trenutni->djeca;
+int izbornik(pozicija_cvor trenutni, pozicija_stog head){
 
-	char ime_direktorija[max_dir_ime];
+	pozicija_cvor prvi = trenutni;
 
+	char ime[MAX] = { 0 };
+	char str[MAX] = { 0 };
+	char naredba[MAX] = { 0 };
 
-	printf("\n Unesite ime direktorija u koji želite uci: ");
+	for(;;){
 
-	scanf_s(" %s", ime_direktorija, max_dir_ime);
+		path(head);
 
-	while (djeca_head != NULL) {
+		fgets(str, MAX, stdin);
 
-		if (strcpy(ime_direktorija, djeca_head->ime) == 0) {
-			return djeca_head;
+		sscanf(str, "%s %s", naredba, ime);
+
+		if (strcmp(naredba, "md")==0 || strcmp(naredba, "mkdir")){
+
+			trenutni = mkdir(ime, trenutni);
 		}
+		else if (strcmp(naredba, "dir")==0){
 
-		djeca_head = djeca_head->next;
+			dir(trenutni);
+		}
+		else if (strcmp(naredba, "cd..")==0){
+			if(trenutni->ime == "C:"){
+				continue;
+			}
+			else{
+			skini_sa_stoga(head);
+
+			trenutni = pronadi_zadnjeg(head)->direktorij;
+			}
+		}
+		else if(strcmp(naredba, "cd")==0){
+
+			trenutni = cd(head,trenutni,ime);
+		}
+		else if (strcmp(naredba, "exit")==0){
+
+			return 0;
+		}
+		else{
+			printf("Nepostojeca naredba!\n", naredba);
+		}
 	}
-
-	printf("\n Direktorij ne postoji!\n");
-
-	return trenutni;
-
+	return 0;
 }
